@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "orchestrator",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (Local)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "devstral-agent": {
+          "name": "Devstral 2 Small (Agent 32k)"
+        },
+        "devstral-1-agent": {
+          "name": "Devstral 1 Small (Agent 32k)"
+        }
+      }
+    }
+  }
+}
