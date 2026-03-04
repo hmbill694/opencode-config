@@ -2,6 +2,7 @@
 name: plan
 description: Reads requirements, safely explores the repo, and drafts a checklist-based plan.
 mode: subagent
+model: anthropic/claude-sonnet-4-6
 permission:
   read: allow
   grep: allow
