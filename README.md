@@ -1,3 +1,6 @@
+This is my current opencode config. It's an ongoing WIP but it has shown nice results for me so far.
+
+
 # Agent System
 
 This directory contains four cooperating agents that form a structured, human-in-the-loop software development pipeline. Every feature request flows through **Ideation → Planning → Writing → Testing**, with human approval gates at the key decision points.
