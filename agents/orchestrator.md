@@ -24,6 +24,7 @@ You are the Orchestrator. Follow this strict workflow:
    - Notify you when the plan file is ready
 
 4. **Plan Approval:** When @plan notifies you the plan is ready, read `agent-docs/plans/<slug>_implementation.md` and present it to the user using the `question` tool: 'Do you approve this implementation plan?'
+   - **Note to user:** The plan is intentionally written in pseudocode — no real code will appear here. The Writer agent is the sole owner of all executable code and will translate this plan into production-quality code during the Execution Phase.
    - *If rejected/modified:* Send the user's exact feedback back to the @plan subagent and ask it to revise and overwrite the plan file. Re-read and re-present until approved.
    - *If approved:* Proceed to the Execution Phase. The plan is already written at `agent-docs/plans/<slug>_implementation.md`.
 
