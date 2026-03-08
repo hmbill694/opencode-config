@@ -10,24 +10,24 @@ This directory contains four cooperating agents that form a structured, human-in
 ## Agents
 
 ### 🎯 Orchestrator (`orchestrator.md`)
-**Mode:** Primary &nbsp;|&nbsp; **Bash:** Ask
+**Mode:** Primary &nbsp;|&nbsp; **Bash:** Ask &nbsp;|&nbsp; **Write:** Allow
 
-The Orchestrator is the user's main interface. It drives the entire workflow, gates all approvals, and delegates work to the three subagents. It never writes code itself.
+The Orchestrator is the user's main interface. It drives the entire workflow, gates all approvals, and delegates work to the three subagents. It never writes code itself — only workflow artifacts (`_requirements.md`, `codebase.md`).
 
 ### 📐 Planner (`plan.md`)
-**Mode:** Subagent &nbsp;|&nbsp; **Write/Edit/Bash:** Denied
+**Mode:** Subagent &nbsp;|&nbsp; **Write:** Allow &nbsp;|&nbsp; **Edit/Bash:** Denied
 
-A read-only research agent. It inspects the repository's architecture and produces a step-by-step, checklist-formatted implementation plan. It returns the draft to the Orchestrator and never touches the filesystem.
+A research agent. It inspects the repository's architecture and produces a step-by-step, checklist-formatted implementation plan, writing it **directly** to `agent-docs/plans/<slug>_implementation.md`. It returns control to the Orchestrator once the file is ready.
 
 ### ✍️ Writer (`writer.md`)
-**Mode:** Subagent &nbsp;|&nbsp; **Bash:** Denied (escalate to Orchestrator)
+**Mode:** Subagent &nbsp;|&nbsp; **Bash:** Ask (runtime prompts user)
 
-Executes the approved implementation plan step by step using `write`, `edit`, and `patch` tools. It tracks its own progress in a `_progress.md` file and hands off to the Tester when done. It cannot run bash commands — it must request permission from the Orchestrator first.
+Executes the approved implementation plan step by step using `write` and `edit` tools. It tracks its own progress in a `_progress.md` file and hands off to the Tester when done. Bash commands (e.g. installing packages) trigger a native runtime approval prompt to the user — no manual relay needed.
 
 ### 🧪 Tester (`tester.md`)
-**Mode:** Subagent &nbsp;|&nbsp; **Write/Edit:** Denied
+**Mode:** Subagent &nbsp;|&nbsp; **Bash:** Allow &nbsp;|&nbsp; **Write:** Allow
 
-Validates the build after every Writer handoff. It auto-detects the project type, runs the appropriate build command, and optionally runs linters and test suites. It feeds failures back to the Writer and escalates to the user after 3 consecutive failures.
+Validates the build after every Writer handoff. It auto-detects the project type, runs the appropriate build command, and optionally runs linters and test suites. It feeds failures back to the Writer (reading `_progress.md` as the source of truth for completed steps) and escalates to the user after 3 consecutive failures.
 
 ---
 
@@ -41,19 +41,18 @@ Orchestrator ──── workshops idea, confirms requirements
  │
  │  writes: agent-docs/plans/<slug>_requirements.md
  ▼
-Planner ─────────── reads repo, drafts implementation plan
- │
+Planner ─────────── reads repo, drafts + writes implementation plan
+ │                  writes: agent-docs/plans/<slug>_implementation.md
  ▼
-Orchestrator ──── presents plan, waits for approval
+Orchestrator ──── reads plan, presents to user, waits for approval
  │
- │  writes: agent-docs/plans/<slug>_implementation.md
  ▼
 Writer ──────────── implements plan step by step
  │                  writes: agent-docs/plans/<slug>_progress.md
  ▼
 Tester ──────────── runs build, lint, tests
  │
- ├── FAIL  ──────── returns feedback to Writer  [up to 3x]
+ ├── FAIL  ──────── reads _progress.md, returns feedback to Writer  [up to 3x]
  │                  reads/writes: agent-docs/plans/<slug>_state.json
  │
  ├── WARN  ──────── reports warnings, returns to Orchestrator
@@ -67,19 +66,22 @@ Tester ──────────── runs build, lint, tests
 |---|---|
 | Requirements | User (via Orchestrator `question` tool) |
 | Implementation plan | User (via Orchestrator `question` tool) |
-| Bash commands (Writer) | User (via Orchestrator `question` tool) |
+| Bash commands (Writer) | User (via runtime `bash: ask` prompt) |
 | Circuit breaker (3 failures) | User (via Tester `question` tool) |
 
 ---
 
 ## Artifact Files
 
-All generated files are written under `agent-docs/plans/` using a slug + timestamp prefix (e.g. `user_auth_170870`) to prevent overwrites across sessions.
+All generated files are written under `agent-docs/plans/` using a slug + Unix epoch timestamp prefix (e.g. `user_auth_1741306200`) to prevent overwrites across sessions. The slug epoch is obtained by running `date +%s` at requirements approval time.
+
+`agent-docs/codebase.md` is committed to the repo (only `agent-docs/plans/` is gitignored) so the codebase map persists across sessions and clones.
 
 | File | Written by | Purpose |
 |---|---|---|
+| `agent-docs/codebase.md` | Orchestrator | Persistent map of all source files (committed) |
 | `<slug>_requirements.md` | Orchestrator | Approved feature requirements |
-| `<slug>_implementation.md` | Orchestrator | Approved step-by-step plan |
+| `<slug>_implementation.md` | Planner | Approved step-by-step plan |
 | `<slug>_progress.md` | Writer | Tracks completed steps (survives context resets) |
 | `<slug>_state.json` | Tester | Tracks consecutive failure count for circuit breaker |
 
