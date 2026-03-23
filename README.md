@@ -9,15 +9,15 @@ This directory contains four cooperating agents that form a structured, human-in
 
 ## Agents
 
-### 🎯 Orchestrator (`orchestrator.md`)
+### 🎯 Engineer Orchestrator (`engineer-orchestrator.md`)
 **Mode:** Primary &nbsp;|&nbsp; **Bash:** Ask &nbsp;|&nbsp; **Write:** Allow
 
-The Orchestrator is the user's main interface. It drives the entire workflow, gates all approvals, and delegates work to the three subagents. It never writes code itself — only workflow artifacts (`_requirements.md`, `codebase.md`).
+The Engineer Orchestrator is the user's main interface. It drives the entire workflow, gates all approvals, and delegates work to the three subagents. It never writes code itself — only workflow artifacts (`_requirements.md`, `codebase.md`).
 
 ### 📐 Planner (`plan.md`)
 **Mode:** Subagent &nbsp;|&nbsp; **Write:** Allow &nbsp;|&nbsp; **Edit/Bash:** Denied
 
-A research agent. It inspects the repository's architecture and produces a step-by-step, checklist-formatted implementation plan, writing it **directly** to `agent-docs/plans/<slug>_implementation.md`. It returns control to the Orchestrator once the file is ready.
+A research agent. It inspects the repository's architecture and produces a step-by-step, checklist-formatted implementation plan, writing it **directly** to `agent-docs/plans/<slug>_implementation.md`. It returns control to the Engineer Orchestrator once the file is ready.
 
 ### ✍️ Writer (`writer.md`)
 **Mode:** Subagent &nbsp;|&nbsp; **Bash:** Ask (runtime prompts user)
@@ -37,14 +37,14 @@ Validates the build after every Writer handoff. It auto-detects the project type
 User
  │
  ▼
-Orchestrator ──── workshops idea, confirms requirements
+Engineer Orchestrator ──── workshops idea, confirms requirements
  │
  │  writes: agent-docs/plans/<slug>_requirements.md
  ▼
 Planner ─────────── reads repo, drafts + writes implementation plan
  │                  writes: agent-docs/plans/<slug>_implementation.md
  ▼
-Orchestrator ──── reads plan, presents to user, waits for approval
+Engineer Orchestrator ──── reads plan, presents to user, waits for approval
  │
  ▼
 Writer ──────────── implements plan step by step
@@ -55,17 +55,17 @@ Tester ──────────── runs build, lint, tests
  ├── FAIL  ──────── reads _progress.md, returns feedback to Writer  [up to 3x]
  │                  reads/writes: agent-docs/plans/<slug>_state.json
  │
- ├── WARN  ──────── reports warnings, returns to Orchestrator
+ ├── WARN  ──────── reports warnings, returns to Engineer Orchestrator
  │
- └── SUCCESS ─────► Orchestrator asks user: done or refine?
+ └── SUCCESS ─────► Engineer Orchestrator asks user: done or refine?
 ```
 
 ### Approval Gates
 
 | Gate | Who approves |
 |---|---|
-| Requirements | User (via Orchestrator `question` tool) |
-| Implementation plan | User (via Orchestrator `question` tool) |
+| Requirements | User (via Engineer Orchestrator `question` tool) |
+| Implementation plan | User (via Engineer Orchestrator `question` tool) |
 | Bash commands (Writer) | User (via runtime `bash: ask` prompt) |
 | Circuit breaker (3 failures) | User (via Tester `question` tool) |
 
@@ -79,8 +79,8 @@ All generated files are written under `agent-docs/plans/` using a slug + Unix ep
 
 | File | Written by | Purpose |
 |---|---|---|
-| `agent-docs/codebase.md` | Orchestrator | Persistent map of all source files (committed) |
-| `<slug>_requirements.md` | Orchestrator | Approved feature requirements |
+| `agent-docs/codebase.md` | Engineer Orchestrator | Persistent map of all source files (committed) |
+| `<slug>_requirements.md` | Engineer Orchestrator | Approved feature requirements |
 | `<slug>_implementation.md` | Planner | Approved step-by-step plan |
 | `<slug>_progress.md` | Writer | Tracks completed steps (survives context resets) |
 | `<slug>_state.json` | Tester | Tracks consecutive failure count for circuit breaker |
@@ -104,5 +104,5 @@ The state file is deleted after the user responds so a fresh retry starts at Att
 | Result | Meaning | Action |
 |---|---|---|
 | `FAIL` | Build doesn't compile | Loop back to Writer (up to 3×) |
-| `WARN` | Lint / type / test failures | Pass with warnings to Orchestrator |
-| `SUCCESS` | All validations pass | Return to Orchestrator for wrap-up |
+| `WARN` | Lint / type / test failures | Pass with warnings to Engineer Orchestrator |
+| `SUCCESS` | All validations pass | Return to Engineer Orchestrator for wrap-up |

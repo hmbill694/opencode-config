@@ -84,7 +84,7 @@ Classify results using this hierarchy:
 
 ## On Build Success
 
-Report success to the Orchestrator with a summary of validation results, including any warnings.
+Report success to the Engineer Orchestrator with a summary of validation results, including any warnings.
 
 ---
 
