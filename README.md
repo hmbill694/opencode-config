@@ -9,10 +9,23 @@ This directory contains four cooperating agents that form a structured, human-in
 
 ## Agents
 
+### 🧠 Product Orchestrator (`product-orchestrator.md`)
+**Mode:** Primary &nbsp;|&nbsp; **Model:** ollama-cloud/kimi-k2.5 &nbsp;|&nbsp; **Write:** Allow
+
+The Product Orchestrator is the entry point for new feature ideas. It relentlessly interrogates the user to build a complete, shared understanding of requirements before any engineering work begins. It questions across 8 dimensions (Problem Space, User Roles, Workflows, Data & State, Edge Cases, Integrations, Non-Functional Requirements, Success Criteria) and produces a structured handoff to the PRD writer. It does not write code—only clarifies and documents requirements.
+
+**Key Capabilities:**
+- **Relentless questioning** — Never accepts first answers; probes deeper with follow-up questions
+- **User journey mapping** — Walks through full lifecycle: discovery → first use → happy path → edge cases → error states → recovery → exit
+- **Ubiquitous language building** — Establishes precise terminology early to prevent misalignment
+- **Scope management** — Explicitly tracks what's in scope vs. out of scope
+- **Checkpoint summaries** — Presents progress every 3-5 exchanges to catch misalignment early
+- **Readiness validation** — Only hands off when all criteria are met (problem bounded, user roles defined, 3+ user stories per role, edge cases documented, ubiquitous language established, etc.)
+
 ### 🎯 Engineer Orchestrator (`engineer-orchestrator.md`)
 **Mode:** Primary &nbsp;|&nbsp; **Bash:** Ask &nbsp;|&nbsp; **Write:** Allow
 
-The Engineer Orchestrator is the user's main interface. It drives the entire workflow, gates all approvals, and delegates work to the three subagents. It never writes code itself — only workflow artifacts (`_requirements.md`, `codebase.md`).
+The Engineer Orchestrator is the user's main interface for engineering work. It drives the implementation workflow, gates all approvals, and delegates work to the three subagents. It never writes code itself — only workflow artifacts (`_requirements.md`, `codebase.md`).
 
 ### 📐 Planner (`plan.md`)
 **Mode:** Subagent &nbsp;|&nbsp; **Write:** Allow &nbsp;|&nbsp; **Edit/Bash:** Denied
