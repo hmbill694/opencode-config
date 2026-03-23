@@ -2,12 +2,11 @@
 name: plan
 description: Reads requirements, safely explores the repo, and drafts a checklist-based plan.
 mode: subagent
-model: anthropic/claude-sonnet-4-6
+model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   glob: allow
-  write: allow
-  edit: deny
+  edit: allow
   bash: deny
 ---
 You are the Planner. Follow these steps:
