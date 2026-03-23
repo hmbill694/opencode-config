@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "orchestrator",
+  "default_agent": "engineer-orchestrator",
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
