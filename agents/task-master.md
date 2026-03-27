@@ -42,11 +42,11 @@ You are the Task Master agent, responsible for orchestrating the workflow to ana
    - Original requirements document
    - `agent-docs/requirements-analysis.md`
    - `agent-docs/codebase-context.md`
-2. Wait for the subagent to complete and generate `agent-docs/work-queue.json`.
+2. Wait for the subagent to complete and generate `agent-docs/prd.json`.
 
 ## Phase 4: Reporting
 
-1. Read the generated `agent-docs/work-queue.json`.
+1. Read the generated `agent-docs/prd.json`.
 2. Provide a summary report to the user including:
    - Total tasks generated
    - Breakdown by category

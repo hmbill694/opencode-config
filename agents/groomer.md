@@ -20,7 +20,7 @@ You are the Groomer subagent, responsible for generating a structured work queue
    - Original requirements document
    - `agent-docs/requirements-analysis.md`
    - `agent-docs/codebase-context.md`
-2. Generate a structured work queue in `agent-docs/work-queue.json`.
+2. Generate a structured work queue in `agent-docs/prd.json`.
 
 ## Task Sizing Rules
 
@@ -30,10 +30,17 @@ You are the Groomer subagent, responsible for generating a structured work queue
 
 ## Task ID Format
 
-Use lowercase hyphenated names in the format: `adjective-noun` (e.g., `update-schema`, `add-endpoint`).
+Use lowercase hyphenated names with module prefixes in the format: <module>-<descriptor> (e.g., `api-auth-endpoint`, `frontend-user-dashboard`, `db-schema-update`).
 
 ## Categories
 
+- `docs`: Documentation changes
+- `security`: Security-related changes
+- `performance`: Performance optimizations
+- `config`: Configuration changes
+- `infrastructure`: Infrastructure/CI/CD changes
+- `bugfix`: Bug fixes
+- `feature`: New features
 - `schema`: Database or data model changes
 - `backend`: Server-side logic
 - `frontend`: UI components
@@ -46,24 +53,50 @@ Use lowercase hyphenated names in the format: `adjective-noun` (e.g., `update-sc
 ```json
 {
   "metadata": {
+    "version": "1.0.0",
     "source": "requirements.md",
     "generatedAt": "2025-05-14T00:00:00Z",
-    "totalTasks": 5
+    "totalTasks": 5,
+    "author": "groomer-agent"
   },
   "tasks": [
     {
-      "id": "update-schema",
-      "category": "schema",
+      "id": "api-auth-endpoint",
+      "category": "backend",
+      "priority": "high",
       "description": "Add new fields to the user table",
       "context": "Requirements document section 2.1",
+      "estimatedDuration": 60,
       "steps": ["Add migration file", "Update model", "Write tests"],
       "affectedFiles": ["db/schema.sql", "models/user.ts"],
+      "acceptanceCriteria": [
+        "Migration runs successfully",
+        "Unit tests pass",
+        "Integration tests pass"
+      ],
+      "testRequirements": {
+        "unitTests": "Cover all new fields",
+        "integrationTests": "Test database operations",
+        "manualTests": "Verify schema in dev environment"
+      },
+      "technicalNotes": "Use TypeORM migrations for consistency",
+      "dependsOn": [],
       "blocks": [],
-      "status": "pending"
+      "status": "pending",
+      "createdAt": "2025-05-14T00:00:00Z",
+      "targetSprint": "Sprint 3"
     }
   ]
 }
 ```
+
+## File Behavior
+
+- **Overwrite Mode**: If `prd.json` exists, it will be COMPLETELY OVERWRITTEN (not merged)
+- **Atomic Write**: Write to temporary file first, then rename to `prd.json`
+- **Validation**: Validate JSON structure before writing
+- **Error Handling**: Clear error messages for JSON parsing failures
+- **ID Uniqueness**: Validate that all task IDs are unique before writing
 
 ### Task Status Enum
 
@@ -84,4 +117,4 @@ All tasks must start with `status: "pending"`.
 - Be specific in steps with actual file paths, type names, and function names.
 - Validate that all `blocks` references are correct.
 - Write valid JSON with no comments.
-- Only write to `agent-docs/work-queue.json`.
+- Only write to `agent-docs/prd.json`.
