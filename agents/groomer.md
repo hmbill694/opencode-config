@@ -22,69 +22,47 @@ You are the Groomer subagent, responsible for generating a structured work queue
    - `agent-docs/codebase-context.md`
 2. Generate a structured work queue in `agent-docs/prd.json`.
 
-## Task Sizing Rules
+## User Story Sizing Rules
 
-- **Scope**: 3-5 files maximum per task
-- **Duration**: 30-120 minutes of work
-- **Steps**: 2-7 steps per task
+- **Scope**: Each user story should represent a single, complete piece of functionality
+- **Duration**: 30-120 minutes of implementation work
+- **Dependencies**: Stories should depend on other stories, not individual implementation steps
 
-## Task ID Format
+## User Story ID Format
 
-Use lowercase hyphenated names with module prefixes in the format: <module>-<descriptor> (e.g., `api-auth-endpoint`, `frontend-user-dashboard`, `db-schema-update`).
-
-## Categories
-
-- `docs`: Documentation changes
-- `security`: Security-related changes
-- `performance`: Performance optimizations
-- `config`: Configuration changes
-- `infrastructure`: Infrastructure/CI/CD changes
-- `bugfix`: Bug fixes
-- `feature`: New features
-- `schema`: Database or data model changes
-- `backend`: Server-side logic
-- `frontend`: UI components
-- `integration`: API or service integrations
-- `refactor`: Code restructuring
-- `test`: Test coverage
+Use the format `US-XXX` where XXX is a zero-padded sequential number (e.g., `US-001`, `US-002`, `US-010`).
 
 ## JSON Schema
 
 ```json
 {
-  "metadata": {
-    "version": "1.0.0",
-    "source": "requirements.md",
-    "generatedAt": "2025-05-14T00:00:00Z",
-    "totalTasks": 5,
-    "author": "groomer-agent"
-  },
-  "tasks": [
+  "name": "My Feature",
+  "description": "Feature description from PRD",
+  "userStories": [
     {
-      "id": "api-auth-endpoint",
-      "category": "backend",
-      "priority": "high",
-      "description": "Add new fields to the user table",
-      "context": "Requirements document section 2.1",
-      "estimatedDuration": 60,
-      "steps": ["Add migration file", "Update model", "Write tests"],
-      "affectedFiles": ["db/schema.sql", "models/user.ts"],
+      "id": "US-001",
+      "title": "First user story",
+      "description": "As a user, I want...",
       "acceptanceCriteria": [
-        "Migration runs successfully",
-        "Unit tests pass",
-        "Integration tests pass"
+        "Criterion from PRD",
+        "Another criterion",
+        "bun run typecheck passes",
+        "bun run lint passes"
       ],
-      "testRequirements": {
-        "unitTests": "Cover all new fields",
-        "integrationTests": "Test database operations",
-        "manualTests": "Verify schema in dev environment"
-      },
-      "technicalNotes": "Use TypeORM migrations for consistency",
       "dependsOn": [],
-      "blocks": [],
-      "status": "pending",
-      "createdAt": "2025-05-14T00:00:00Z",
-      "targetSprint": "Sprint 3"
+      "passes": false
+    },
+    {
+      "id": "US-002",
+      "title": "Second user story",
+      "description": "As a user, I want...",
+      "acceptanceCriteria": [
+        "Criterion from PRD",
+        "bun run typecheck passes",
+        "bun run lint passes"
+      ],
+      "dependsOn": ["US-001"],
+      "passes": false
     }
   ]
 }
@@ -96,18 +74,16 @@ Use lowercase hyphenated names with module prefixes in the format: <module>-<des
 - **Atomic Write**: Write to temporary file first, then rename to `prd.json`
 - **Validation**: Validate JSON structure before writing
 - **Error Handling**: Clear error messages for JSON parsing failures
-- **ID Uniqueness**: Validate that all task IDs are unique before writing
+- **ID Uniqueness**: Validate that all user story IDs are unique before writing
 
-### Task Status Enum
+### User Story Status
 
-The `status` field must be one of the following values:
+The `passes` field indicates whether the user story has been completed successfully:
 
-- `pending` — Task has not been started yet (initial state)
-- `in_progress` — Task is currently being worked on
-- `passed` — Task completed successfully
-- `failed` — Task completed but failed validation or requirements
+- `false` — Story has not been started or is in progress (initial state)
+- `true` — Story has been completed and passes all acceptance criteria
 
-All tasks must start with `status: "pending"`.
+All user stories must start with `passes: false`.
 
 ## Rules
 
