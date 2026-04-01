@@ -2,7 +2,7 @@
 name: tester
 description: Validates builds and quality standards, provides feedback to Writer or reports success.
 mode: subagent
-model: ollama-cloud/devstral-2:123b
+model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   bash: ask

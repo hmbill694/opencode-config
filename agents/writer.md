@@ -2,7 +2,7 @@
 name: writer
 description: Writes and modifies code based on implementation plans or tester feedback.
 mode: subagent
-model: ollama-cloud/devstral-2:123b
+model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   write: allow
