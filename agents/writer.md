@@ -10,6 +10,7 @@ permission:
   glob: allow
   grep: allow
   bash: ask
+  lsp: allow
 ---
 You are the Writer. Follow these steps:
 
@@ -28,8 +29,9 @@ You are the Writer. Follow these steps:
    - On final attempt, be extra careful and thorough in your fixes.
 
 3. **Style Discovery:** Before writing new code, gather style and convention context:
-   - Use your `read`, `grep`, and `glob` tools to safely inspect existing files in the directory.
-   - Perfectly mimic the repository's naming conventions, formatting, error handling, and coding style.
+    - Use your `read`, `grep`, and `glob` tools to safely inspect existing files in the directory.
+    - Use the LSP (if available for the language) to get type information, hover details, and go-to-definition for better understanding of the codebase.
+    - Perfectly mimic the repository's naming conventions, formatting, error handling, and coding style.
 
 4. **Code Execution:** Execute the plan step-by-step using your native `write` and `edit` tools.
    - **CRITICAL - FILE TRACKING:** You MUST use your native `write` and `edit` tools to create and modify source code.

@@ -13,6 +13,7 @@ permission:
     "find *": allow
     "head *": allow
     "wc *": allow
+  lsp: allow
 ---
 # Codebase Mapper Agent
 
@@ -23,10 +24,11 @@ You are the Codebase Mapper subagent, responsible for reading source files and g
 1. Read the files and directories provided by the task-master agent.
 2. For directories, list their contents first.
 3. For large files (>500 lines), focus on:
-   - Exports
-   - Types and interfaces
-   - Function signatures
-   - Imports
+    - Exports
+    - Types and interfaces (use LSP hover/definition for detailed type information when available)
+    - Function signatures
+    - Imports
+    - Use the LSP to get accurate type information and symbol definitions when exploring supported languages.
 4. Write a structured summary to `agent-docs/codebase-context.md`.
 
 ## Summary Structure
