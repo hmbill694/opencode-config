@@ -39,7 +39,11 @@ Track the current attempt number using a durable state file, **not** just in-con
 
 ## Workflow
 
-1. **Receive Notification:** Receive notification from the @writer subagent that code changes are ready, along with a summary of what was changed.
+1. **Receive Notification:** Receive notification from the @writer subagent (unsupervised mode) or @engineer-orchestrator (supervised mode) that code changes are ready, along with a summary of what was changed.
+
+2. **Detect Mode:** Parse the invocation message for "Mode: [supervised|unsupervised]" indicator:
+   - **Mode: supervised:** Return results to Engineer Orchestrator, not Writer
+   - **Mode: unsupervised:** Loop directly with Writer on failures
 
 2. **Project Detection:** Detect the project type and determine the appropriate build command:
    - Node.js: Check `package.json` for build scripts (`npm run build` or `yarn build`)
@@ -88,43 +92,78 @@ Classify results using this hierarchy:
 
 ## On Build Success
 
-Report success to the Engineer Orchestrator with a summary of validation results, including any warnings.
+Classify results using the hierarchy above (SUCCESS, WARN, FAIL).
+
+**Supervised Mode:** Report to Engineer Orchestrator with status, summary, and any warnings.
+
+**Unsupervised Mode:** Report success to the Writer or Engineer Orchestrator with a summary of validation results, including any warnings.
 
 ---
 
 ## On Build Failure
 
 1. Read the progress file using the `Progress:` field from the Writer's handoff message verbatim (do not construct or derive this path) to get the authoritative list of completed steps (this is the source of truth — do not rely solely on your context memory).
-2. Extract the specific error messages from the build output and invoke the @writer subagent **using the `task` tool**. Forward all three path fields verbatim from the Writer's original handoff — do not reconstruct them:
+2. Extract the specific error messages from the build output.
 
-   ```yaml
-   Task(
-     description: "Fix build failures [Attempt X/3]",
-     subagent_type: "writer",
-     prompt: """
-     [Attempt X/3]
-     
-     Plan: agent-docs/plans/<slug>_implementation.md
-     Progress: agent-docs/plans/<slug>_progress.md
-     State: agent-docs/plans/<slug>_state.json
-     
-     Completed steps (from progress file):
-       - [x] Step 1: [description]
-       - [x] Step 2: [description]
-     
-     Build Error:
-       - [file:line] [error description]
-     
-     Please fix the reported errors and re-invoke me (@tester) for validation.
-     """
-   )
-   ```
+**Mode-based failure handling:**
 
-   Include:
-   - The attempt number: `[Attempt X/3]` or `[Attempt 3/3 - FINAL]`
-   - All three explicit paths for reference
-   - List which steps have been completed (sourced from the progress file)
-   - Provide specific error messages and file locations
+### Supervised Mode
+
+Return detailed feedback to the Engineer Orchestrator, which will decide whether to send the feedback to the Writer:
+
+```yaml
+function on_build_failure_supervised(errors, state):
+  state.attempts += 1
+  write_state_file(state)
+  
+  if state.attempts >= 3:
+    trigger_circuit_breaker(errors)
+    return
+  
+  report_to_engineer_orchestrator({
+    status: "FAIL",
+    attempt: state.attempts,
+    errors: extract_specific_errors(errors),
+    completed_steps: read_progress_file(),
+    recommendation: "Send feedback to Writer for fixes"
+  })
+  # EO will decide next steps and may invoke Writer with feedback
+```
+
+### Unsupervised Mode
+
+Invoke the @writer subagent directly with the failure details:
+
+```yaml
+Task(
+  description: "Fix build failures [Attempt X/3]",
+  subagent_type: "writer",
+  prompt: """
+  [Attempt X/3]
+  
+  Mode: unsupervised
+  
+  Plan: agent-docs/plans/<slug>_implementation.md
+  Progress: agent-docs/plans/<slug>_progress.md
+  State: agent-docs/plans/<slug>_state.json
+  
+  Completed steps (from progress file):
+    - [x] Step 1: [description]
+    - [x] Step 2: [description]
+  
+  Build Error:
+    - [file:line] [error description]
+  
+  Please fix the reported errors and re-invoke me (@tester) for validation.
+  """
+)
+```
+
+Include:
+- The attempt number: `[Attempt X/3]` or `[Attempt 3/3 - FINAL]`
+- All three explicit paths for reference
+- List which steps have been completed (sourced from the progress file)
+- Provide specific error messages and file locations
 
 ---
 
@@ -135,7 +174,28 @@ Track consecutive Writer→Tester loop failures.
 After **3 consecutive failures**:
 1. **STOP** the automated loop immediately.
 2. Compile a detailed summary of ALL errors encountered across all attempts.
-3. Use the `question` tool to present these options:
+3. Handle based on mode:
+
+### Supervised Mode
+
+Report circuit breaker to Engineer Orchestrator, which will present options to user:
+
+```yaml
+report_to_engineer_orchestrator({
+  status: "CIRCUIT_BREAKER",
+  errors_summary: compile_error_summary(all_errors),
+  options: [
+    "Retry fresh - reset counter, try again",
+    "Abort task - stop entirely",
+    "Fix manually - user fixes, then re-test"
+  ]
+})
+# EO will use question tool to get user choice
+```
+
+### Unsupervised Mode
+
+Use the `question` tool directly:
 
 ```
 The build has failed 3 times. Here are the errors encountered:

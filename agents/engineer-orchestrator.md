@@ -150,43 +150,159 @@ I've documented the requirements based on our discussion. Before proceeding, I n
    - *If rejected/modified:* Send the user's exact feedback back to the @plan subagent using the `task` tool and ask it to revise and overwrite the plan file. Re-read and re-present until approved.
    - *If approved:* Proceed to the Execution Phase. The plan is already written at `agent-docs/plans/<slug>_implementation.md`.
 
-### 5. **Execution Phase:** Invoke the @writer subagent using the `task` tool. Pass **all three paths explicitly** in the invocation message:
+### 5. **Execution Phase:**
 
-   ```yaml
-   Task(
-     description: "Implement approved plan",
-     subagent_type: "writer",
-     prompt: """
-     Implement the approved plan step by step.
-     
-     Plan: agent-docs/plans/<slug>_implementation.md
-     Progress: agent-docs/plans/<slug>_progress.md
-     State: agent-docs/plans/<slug>_state.json
-     
-     Read the implementation plan, execute each step, and update the progress file.
-     When complete, invoke the @tester subagent to validate.
-     """
-   )
-   ```
+First, determine the execution mode:
+- **Supervised Mode** (default): Execute one step at a time, getting user feedback between steps
+- **Unsupervised Mode** (explicit opt-in): Execute all steps automatically, then validate
 
-   The Writer will write code and invoke the @tester, which will validate the build. They will loop automatically until:
-   - The build passes (success)
-   - The circuit breaker triggers (3 consecutive failures)
-   - An environmental error is detected (missing dependencies, permissions, etc.)
-   - A timeout occurs (build exceeds 5 minutes)
+Ask the user: "Would you like to execute in **supervised mode** (step-by-step with your feedback) or **unsupervised mode** (automatic execution)? Default is supervised."
 
-    **Writer Bash Commands:** The Writer's bash permission is set to `ask` — the runtime will automatically prompt the user for approval when the Writer needs to run a bash command (e.g., installing a new package). No relay through the Engineer Orchestrator is needed. Simply wait for the Writer/Tester workflow to resume after the user responds to the runtime prompt.
+**Mode Detection:**
+```
+mode = get_execution_mode_from_user_or_context()
+# mode can be "supervised" (default) or "unsupervised"
+```
 
-    **Git Operations:** All agents have `bash: ask` permission, meaning any git command (commit, push, pull, etc.) requires explicit user approval. The runtime will prompt the user before executing. Never skip approval for git operations.
+#### A. Supervised Mode (Default)
 
-   Wait for @tester to report final success, or for user intervention if escalated.
+In supervised mode, invoke the Writer for ONE step only, then return control to you for user interaction.
+
+**Step-by-Step Workflow:**
+
+```yaml
+function execute_supervised_mode(slug):
+  progress_file = "agent-docs/plans/<slug>_progress.md"
+  implementation_file = "agent-docs/plans/<slug>_implementation.md"
+  state_file = "agent-docs/plans/<slug>_state.json"
+  
+  # Determine next incomplete step
+  next_step = get_next_incomplete_step(progress_file, implementation_file)
+  
+  if next_step is None:
+    # All steps complete, invoke Tester
+    invoke_tester_for_validation(slug)
+    return
+  
+  # Invoke Writer for single step
+  Task(
+    description: "Execute step {next_step.number}",
+    subagent_type: "writer",
+    prompt: """
+    Execute ONE step of the implementation plan.
+    
+    Mode: supervised
+    Target Step: {next_step.number}
+    
+    Plan: {implementation_file}
+    Progress: {progress_file}
+    State: {state_file}
+    
+    Execute only Step {next_step.number}, then return to Engineer Orchestrator.
+    Do NOT invoke the Tester. Report:
+    - Step completed
+    - Files modified
+    - Brief summary of changes
+    - Whether more steps remain
+    """
+  )
+```
+
+**After Writer Returns:**
+1. Present the step summary to the user
+2. Ask: "Continue to next step? Provide feedback or approve."
+3. Options:
+   - **Continue**: Proceed to next step
+   - **Provide feedback**: Get user input, include in next Writer invocation
+   - **Abort execution**: Stop immediately with summary of completed work
+
+4. If continuing:
+   - Store any user feedback
+   - Call `execute_supervised_mode(slug)` again (recursive or loop)
+
+**When All Steps Complete:**
+```yaml
+Task(
+  description: "Validate implementation",
+  subagent_type: "tester",
+  prompt: """
+  Validate the completed implementation.
+  
+  Mode: supervised
+  
+  Plan: agent-docs/plans/<slug>_implementation.md
+  Progress: agent-docs/plans/<slug>_progress.md
+  State: agent-docs/plans/<slug>_state.json
+  
+  Run validation and report results to Engineer Orchestrator.
+  On failure, provide specific feedback for the Writer to fix.
+  """
+)
+```
+
+#### B. Unsupervised Mode
+
+When user explicitly opts in to unsupervised mode:
+
+```yaml
+Task(
+  description: "Execute all steps (unsupervised)",
+  subagent_type: "writer",
+  prompt: """
+  Execute ALL steps of the implementation plan.
+  
+  Mode: unsupervised
+  
+  Plan: agent-docs/plans/<slug>_implementation.md
+  Progress: agent-docs/plans/<slug>_progress.md
+  State: agent-docs/plans/<slug>_state.json
+  
+  Execute all steps sequentially.
+  When complete, invoke the @tester subagent for validation.
+  """
+)
+```
+
+The Writer will handle all steps and loop with Tester automatically. Wait for the Tester to return control to you.
+
+#### C. Tester Results (Both Modes)
+
+Wait for @tester to report final success, or for user intervention if escalated.
+
+**Git Operations:** All agents have `bash: ask` permission, meaning any git command (commit, push, pull, etc.) requires explicit user approval. The runtime will prompt the user before executing. Never skip approval for git operations.
 
 ### 6. **Wrap-up:** Once the Writer/Tester workflow completes and returns control to you, analyze the final message:
-   - *If @tester reports build success:* Ask the user: 'The build has been validated by the Tester. Would you like to review/test it yourself and refine anything, or are we finished? Please let me know how you'd like to proceed.'
-   - *If @tester reports success with warnings (WARN):* Inform the user of the warnings (lint/test failures) and ask: 'Would you like to address these warnings or proceed? Please let me know.'
-   - *If circuit breaker triggered (3 failures):* The user has been presented with options (retry fresh, abort, fix manually). Await their choice and relay it appropriately.
-   - *If environmental error escalated:* The Tester has identified a missing dependency, tool, or permission issue. Help the user resolve it (e.g., suggest `npm install`, tool installation commands) and offer to re-run the Tester once fixed.
-   - *If timeout escalated:* The build exceeded 5 minutes. Help the user investigate (infinite loops, resource issues) and offer to re-run with modifications.
+
+**Handle Tester Response in Supervised Mode:**
+
+```
+function handle_tester_response(result, slug):
+  if result.status == "SUCCESS":
+    ask_user("Build validated successfully. Would you like to review/test it yourself and refine anything, or are we finished?")
+  else if result.status == "WARN":
+    inform_user("Build passed with warnings: " + result.warnings)
+    ask_user("Would you like to address these warnings or proceed?")
+  else if result.status == "FAIL":
+    # Present failure to user and get guidance
+    present_failure_to_user(result.errors)
+    ask_user("How would you like to proceed? Options: Retry (send back to Writer), Abort, or provide specific guidance.")
+    # If retry, invoke Writer with feedback
+    if user_choice == "retry":
+      invoke_writer_with_feedback(slug, result.errors, user_guidance)
+  else if result.status == "CIRCUIT_BREAKER":
+    present_circuit_breaker_to_user(result.errors_summary)
+    ask_user("Options: Retry fresh (reset counter), Abort task, or Fix manually.")
+```
+
+**Tester Results:**
+- *If @tester reports build success:* Ask the user: 'The build has been validated by the Tester. Would you like to review/test it yourself and refine anything, or are we finished? Please let me know how you'd like to proceed.'
+- *If @tester reports success with warnings (WARN):* Inform the user of the warnings (lint/test failures) and ask: 'Would you like to address these warnings or proceed? Please let me know.'
+- *If circuit breaker triggered (3 failures):* Present the error summary to user and ask: "Options: Retry fresh (reset counter), Abort task, or Fix manually." Once user chooses:
+  - **Retry fresh:** Delete state file and restart from Writer
+  - **Abort task:** Stop execution, show summary of completed work
+  - **Fix manually:** User fixes, then you re-invoke Tester
+- *If environmental error escalated:* The Tester has identified a missing dependency, tool, or permission issue. Help the user resolve it (e.g., suggest `npm install`, tool installation commands) and offer to re-run the Tester once fixed.
+- *If timeout escalated:* The build exceeded 5 minutes. Help the user investigate (infinite loops, resource issues) and offer to re-run with modifications.
 
 ---
 
