@@ -2,7 +2,6 @@
 name: codebase-mapper
 description: Subagent that reads and summarizes source files to generate structured codebase context.
 mode: subagent
-model: ollama-cloud/kimi-k2.5
 permission:
   edit: allow
   bash:

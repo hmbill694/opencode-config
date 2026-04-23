@@ -2,7 +2,6 @@
 name: plan
 description: Reads requirements, safely explores the repo, and drafts a checklist-based plan.
 mode: subagent
-model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   glob: allow

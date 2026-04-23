@@ -2,7 +2,6 @@
 name: task-master
 description: Orchestrator agent that analyzes requirements, invokes subagents, and manages the workflow for generating structured work queues.
 mode: primary
-model: ollama-cloud/kimi-k2.5
 permission:
   edit: allow
   bash:

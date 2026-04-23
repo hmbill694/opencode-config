@@ -2,7 +2,6 @@
 name: product-requirements-writer
 description: Receives a fully explored feature handoff from the Product Orchestrator and produces a structured PRD document.
 mode: subagent
-model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   bash: ask

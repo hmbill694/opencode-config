@@ -2,7 +2,6 @@
 name: tester
 description: Validates builds and quality standards, provides feedback to Writer or reports success.
 mode: subagent
-model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   bash: ask
@@ -115,11 +114,11 @@ Return detailed feedback to the Engineer Orchestrator, which will decide whether
 function on_build_failure_supervised(errors, state):
   state.attempts += 1
   write_state_file(state)
-  
+
   if state.attempts >= 3:
     trigger_circuit_breaker(errors)
     return
-  
+
   report_to_engineer_orchestrator({
     status: "FAIL",
     attempt: state.attempts,
@@ -140,20 +139,20 @@ Task(
   subagent_type: "writer",
   prompt: """
   [Attempt X/3]
-  
+
   Mode: unsupervised
-  
+
   Plan: agent-docs/plans/<slug>_implementation.md
   Progress: agent-docs/plans/<slug>_progress.md
   State: agent-docs/plans/<slug>_state.json
-  
+
   Completed steps (from progress file):
     - [x] Step 1: [description]
     - [x] Step 2: [description]
-  
+
   Build Error:
     - [file:line] [error description]
-  
+
   Please fix the reported errors and re-invoke me (@tester) for validation.
   """
 )

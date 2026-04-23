@@ -2,7 +2,6 @@
 name: product-orchestrator
 description: Relentlessly questions the user to build a complete, shared understanding of a feature before handing off to the PRD agent.
 mode: primary
-model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   bash: ask

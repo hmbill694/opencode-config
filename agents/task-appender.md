@@ -2,7 +2,6 @@
 name: task-appender
 description: Subagent that validates and appends new user stories to an existing prd.json file with strict alignment checks.
 mode: subagent
-model: ollama-cloud/kimi-k2.5
 permission:
   edit: deny
   bash:

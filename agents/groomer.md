@@ -2,7 +2,6 @@
 name: groomer
 description: Subagent that generates structured prd.json from analysis documents.
 mode: subagent
-model: ollama-cloud/kimi-k2.5
 permission:
   edit: allow
   bash:

@@ -2,7 +2,6 @@
 name: engineer-orchestrator
 description: Your main interface. Workshops ideas, manages approvals, handles rejections, and wraps up execution.
 mode: primary
-model: ollama-cloud/kimi-k2.5
 permission:
   write: allow
   read: allow
@@ -136,10 +135,10 @@ I've documented the requirements based on our discussion. Before proceeding, I n
      Read the requirements at agent-docs/plans/<slug>_requirements.md.
      Explore the codebase to understand the architecture.
      Write a step-by-step implementation plan to agent-docs/plans/<slug>_implementation.md.
-     
+
      The requirements file path is: agent-docs/plans/<slug>_requirements.md
      The implementation plan output path is: agent-docs/plans/<slug>_implementation.md
-     
+
      Notify me when the plan file is ready.
      """
    )
@@ -175,29 +174,29 @@ function execute_supervised_mode(slug):
   progress_file = "agent-docs/plans/<slug>_progress.md"
   implementation_file = "agent-docs/plans/<slug>_implementation.md"
   state_file = "agent-docs/plans/<slug>_state.json"
-  
+
   # Determine next incomplete step
   next_step = get_next_incomplete_step(progress_file, implementation_file)
-  
+
   if next_step is None:
     # All steps complete, invoke Tester
     invoke_tester_for_validation(slug)
     return
-  
+
   # Invoke Writer for single step
   Task(
     description: "Execute step {next_step.number}",
     subagent_type: "writer",
     prompt: """
     Execute ONE step of the implementation plan.
-    
+
     Mode: supervised
     Target Step: {next_step.number}
-    
+
     Plan: {implementation_file}
     Progress: {progress_file}
     State: {state_file}
-    
+
     Execute only Step {next_step.number}, then return to Engineer Orchestrator.
     Do NOT invoke the Tester. Report:
     - Step completed
@@ -227,13 +226,13 @@ Task(
   subagent_type: "tester",
   prompt: """
   Validate the completed implementation.
-  
+
   Mode: supervised
-  
+
   Plan: agent-docs/plans/<slug>_implementation.md
   Progress: agent-docs/plans/<slug>_progress.md
   State: agent-docs/plans/<slug>_state.json
-  
+
   Run validation and report results to Engineer Orchestrator.
   On failure, provide specific feedback for the Writer to fix.
   """
@@ -250,13 +249,13 @@ Task(
   subagent_type: "writer",
   prompt: """
   Execute ALL steps of the implementation plan.
-  
+
   Mode: unsupervised
-  
+
   Plan: agent-docs/plans/<slug>_implementation.md
   Progress: agent-docs/plans/<slug>_progress.md
   State: agent-docs/plans/<slug>_state.json
-  
+
   Execute all steps sequentially.
   When complete, invoke the @tester subagent for validation.
   """
@@ -318,11 +317,11 @@ function handle_tester_response(result, slug):
      subagent_type: "writer",
      prompt: """
      Execute this simple request: [description from user]
-     
+
      Plan: agent-docs/plans/<slug>_implementation.md
      Progress: agent-docs/plans/<slug>_progress.md
      State: agent-docs/plans/<slug>_state.json
-     
+
      The plan file will contain a single step describing the change.
      Write this simple plan file first, then implement it.
      """

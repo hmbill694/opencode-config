@@ -2,7 +2,6 @@
 name: writer
 description: Writes and modifies code based on implementation plans or tester feedback.
 mode: subagent
-model: ollama-cloud/kimi-k2.5
 permission:
   read: allow
   write: allow
@@ -57,17 +56,17 @@ You are the Writer. Follow these steps:
       subagent_type: "tester",
       prompt: """
       Validate the code changes and run build/tests.
-      
+
       Mode: unsupervised
-      
+
       Plan: agent-docs/plans/<slug>_implementation.md
       Progress: agent-docs/plans/<slug>_progress.md
       State: agent-docs/plans/<slug>_state.json
-      
+
       Summary of changes:
       - [list files created/modified]
       - [brief description of what was done]
-      
+
       Detect the project type, run the appropriate build command, and report results.
       """
     )
